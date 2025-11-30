@@ -1,0 +1,5 @@
+{
+  "slack_webhook_url": "",
+  "notify_on_price_change": true,
+  "notify_on_error": true
+}
