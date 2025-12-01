@@ -1,9 +1,9 @@
-name: Price Monitor CI 2
+name: Price Monitor CI (debuggable)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # 手動で即実行できる
   schedule:
-    - cron: "0 */3 * * *"
+    - cron: "0 */3 * * *"  # 3時間ごとに実行（不要なら削除）
 
 jobs:
   check-price:
@@ -13,17 +13,80 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # --- Debug: show repo root and important files ---
+      - name: Debug: show working dir & files
+        run: |
+          echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
+          pwd
+          ls -la
+          echo "ls .github:"
+          ls -la .github || true
+          echo "ls .github/workflows:"
+          ls -la .github/workflows || true
+          echo "ls src:"
+          ls -la src || true
+          echo "show top-level files:"
+          ls -la | sed -n '1,120p'
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install dependencies (pip)
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            echo "Installing from requirements.txt"
+            pip install -r requirements.txt
+          else
+            echo "No requirements.txt, installing minimal deps"
+            pip install requests
+          fi
 
-      - name: Run price monitor
+      # --- Debug: show python and pip info so we can see env in logs ---
+      - name: Debug: python info
+        run: |
+          which python || true
+          python --version || true
+          pip --version || true
+          pip list || true
+
+      # --- Optional: force alert mode for testing ---
+      # To test notifications, trigger with 'FORCE_ALERT=true' in the UI.
+      - name: Run price monitor (main script)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          FORCE_ALERT: ${{ github.event.inputs.force_alert || 'false' }}
+        run: |
+          echo "==== RUNNING price monitor ===="
+          echo "FORCE_ALERT=${FORCE_ALERT}"
+          # print the script for visibility (optional)
+          if [ -f src/main.py ]; then
+            echo "---- src/main.py (head) ----"
+            sed -n '1,200p' src/main.py || true
+            echo "----------------------------"
+          else
+            echo "ERROR: src/main.py not found"
+            exit 2
+          fi
+
+          # Run main and capture exit & stdout/stderr for logs
+          python src/main.py 2>&1 | tee monitor_run.log || echo "script exit $?"
+          echo "==== monitor log saved to monitor_run.log ===="
+          tail -n 100 monitor_run.log || true
+
+      # --- If you want the workflow to send only CI-level notification, keep this.
+      # But per your request we prefer only price-change messages from main.py itself.
+      - name: Notify Slack on failure (workflow-level fallback)
+        if: failure()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          python src/main.py
+          echo "Sending workflow-level failure fallback to Slack"
+          if [ -z "${SLACK_WEBHOOK_URL}" ]; then
+            echo "No SLACK_WEBHOOK_URL set"
+            exit 0
+          fi
+          payload="{\"text\":\"❌ Price Monitor workflow failed in repo ${GITHUB_REPOSITORY} (run: ${GITHUB_RUN_ID})\"}"
+          curl -s -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL" || true
