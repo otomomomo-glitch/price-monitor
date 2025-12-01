@@ -1,88 +1,45 @@
-import json
-import os
-from scrapers.nintendo import scrape_nintendo
-from src.comparator import compare_price
-from src.screenshot import take_screenshot
-from src.utils import get_logger
-
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # price-monitor/
-PRODUCTS_PATH = os.path.join(BASE_DIR, "configs", "products.json")
-logger = get_logger()
+from src.fetcher import fetch_html
+from src.parser import parse_price
+from src.comparator import detect_price_change
+from src.notifier import notify_slack
+from src.utils import load_products, load_settings
 
 def main():
-    with open(PRODUCTS_PATH, "r") as f:
-        products = json.load(f)
+    print("=== Price Monitor Started ===")
 
-    print("--- Nintendo スクレイプ開始 ---\n")
+    products = load_products()
+    settings = load_settings()
 
-    for product in products:
-        title = product["title"]
-        url = product["url"]
-        store_type = product["type"]
+    for p in products:
+        url = p["url"]
+        name = p["name"]
+        old_price = p.get("last_price")
 
-        print(f"▶ {title}（{store_type}）: {url}")
+        print(f"Checking: {name}")
 
-        if store_type == "new":
-            result = scrape_nintendo(url)
-        else:
-            print("不明な type です")
+        html = fetch_html(url)
+        new_price = parse_price(html)
+
+        if new_price is None:
+            notify_slack(f":warning: {name} の価格を取得できませんでした。")
             continue
 
-        # ▼ スクレイプ失敗時
-        if result is None or result.get("price") is None:
-            print("❌ 価格取得に失敗しました\n")
-            continue
+        result = detect_price_change(old_price, new_price, settings["threshold_percent"])
 
-        print(f"タイトル: {title}")
-        print(f"価格: {result['price']}円")
-        print(f"URL: {url}\n")
+        # 変化あり → Slack通知
+        if result["changed"]:
+            msg = (
+                f":warning: 価格変動を検知しました！\n"
+                f"{name}\n"
+                f"価格変動！ {old_price}円 → {new_price}円（変動率：{result['diff_percent']}%）\n"
+                f"{url}"
+            )
+            notify_slack(msg)
 
+        # JSON に最新の価格を書き戻す
+        p["last_price"] = new_price
 
-
-        # -------------------------
-        #   比較（±20％チェック）
-        # -------------------------
-
-        price = result["price"]
-
-        compare_result = compare_price(url, price)
-
-        status = compare_result["status"]
-        message = compare_result["message"]
-
-        from src.notifier import notify
-
-        # ▼ 結果表示
-        if status == "error":
-            print(f"⚠ 異常検知: {message}\n")
-
-            screenshot_path = take_screenshot(url, title)
-            print(f"📷 スクショ保存: {screenshot_path}\n")
-
-            notify(f"異常値を検知しました！\n{title}\n{message}\n{url}", "error")
-
-        elif status == "changed":
-            print(f" 価格変動アラート: {message}\n")
-            
-            screenshot_path = take_screenshot(url, title)
-            print(f"📷 スクショ保存: {screenshot_path}\n")
-
-            notify(f"価格変動を検知しました！\n{title}\n{message}\n{url}", "warning")
-
-        elif status == "ok":
-            print(f"✓ {message}\n")
-
-        elif status == "test":
-            print(f"[TEST] {message}\n")
-
-        else:
-            print(f"その他の状態: {message}\n")
-
-
-
-logger.info("price-monitor start")
-logger.warning("価格が怪しいです")
-logger.error("スクショに失敗しました")
+    print("=== Price Monitor Finished ===")
 
 if __name__ == "__main__":
     main()
