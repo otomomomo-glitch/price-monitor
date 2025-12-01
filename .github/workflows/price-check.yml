@@ -1,8 +1,9 @@
 name: Price Monitor CI (debuggable)
 
 on:
-  workflow_dispatch:   # 手動で即実行できる
+  workflow_dispatch: {}
   schedule:
+
     - cron: "0 */3 * * *"  # 3時間ごとに実行（不要なら削除）
 
 jobs:
