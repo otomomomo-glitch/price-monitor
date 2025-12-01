@@ -3,7 +3,7 @@ name: Price Monitor CI
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */3 * * *"  # 3時間ごと
+    - cron: "0 */3 * * *"
 
 jobs:
   check-price:
