@@ -12,19 +12,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Debug: show working dir & files
-        run: |
-          echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
-          pwd
-          ls -la
-          echo "ls .github:"
-          ls -la .github || true
-          echo "ls .github/workflows:"
-          ls -la .github/workflows || true
-          echo "ls src:"
-          ls -la src || true
-          echo "show top-level files:"
-          ls -la | sed -n '1,120p'
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -41,14 +28,6 @@ jobs:
             echo "No requirements.txt, installing minimal deps"
             pip install requests
           fi
-
-      # --- Debug: show python and pip info so we can see env in logs ---
-      - name: Debug: python info
-        run: |
-          which python || true
-          python --version || true
-          pip --version || true
-          pip list || true
 
       # --- Optional: force alert mode for testing ---
       # To test notifications, trigger with 'FORCE_ALERT=true' in the UI.
