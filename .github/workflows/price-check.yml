@@ -59,6 +59,7 @@ jobs:
         if: failure()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PYTHONPATH: src
         run: |
           echo "Sending workflow-level failure fallback to Slack"
           if [ -z "${SLACK_WEBHOOK_URL}" ]; then
