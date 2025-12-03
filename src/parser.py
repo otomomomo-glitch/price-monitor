@@ -1,5 +1,3 @@
-# src/parser.py
-
 import re
 
 
