@@ -25,5 +25,6 @@ jobs:
       - name: Run price monitor
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PYTHONPATH: src
         run: |
           python src/main.py
