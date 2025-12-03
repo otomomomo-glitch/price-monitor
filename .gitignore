@@ -1,0 +1,26 @@
+# OSごとの不要ファイル
+.DS_Store
+Thumbs.db
+
+# Pythonキャッシュ
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 仮想環境
+venv/
+.env/
+
+# ログや一時ファイル
+*.log
+*.tmp
+
+# Jupyter Notebookのチェックポイント
+.ipynb_checkpoints/
+
+# VSCodeやIDEの設定
+.vscode/
+.idea/
+
+# GitHub Actionsなどで生成される一時ファイルがあれば追加
