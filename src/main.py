@@ -1,8 +1,8 @@
-from src.fetcher import fetch_html
-from src.parser import parse_price
-from src.comparator import detect_price_change
-from src.notifier import notify_slack
-from src.utils import load_products, load_settings
+from .fetcher import fetch_html
+from .parser import parse_price
+from .comparator import detect_price_change
+from .notifier import notify_slack
+from .utils import load_products, load_settings
 
 def main():
     print("=== Price Monitor Started ===")
