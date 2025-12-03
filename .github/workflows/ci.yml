@@ -25,6 +25,14 @@ jobs:
       - name: Run price monitor
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          PYTHONPATH: src
+          PYTHONPATH: ${{ github.workspace }}/src
         run: |
           python src/main.py
+      - name: Debug environment
+        run: |
+          pwd
+          ls -R
+          python --version
+          pip list
+
+
