@@ -1,4 +1,4 @@
-from .fetcher import fetch_html
+from .fetcher import get_page
 from .parser import parse_price
 from .comparator import detect_price_change
 from .notifier import notify_slack
