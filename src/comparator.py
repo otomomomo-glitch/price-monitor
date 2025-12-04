@@ -1,9 +1,11 @@
 import json
 import os
+from src.utils import get_logger
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 HISTORY_PATH = os.path.join(BASE_DIR, "configs", "price_history.json")
 
+logger = get_logger()
 
 # -------------------------
 # 価格履歴の読み書き
@@ -13,13 +15,13 @@ def load_history():
     """過去価格データを読み込む"""
     if not os.path.exists(HISTORY_PATH):
         return {}
-    with open(HISTORY_PATH, "r") as f:
+    with open(HISTORY_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def save_history(history):
     """過去価格データを保存"""
-    with open(HISTORY_PATH, "w") as f:
+    with open(HISTORY_PATH, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=2, ensure_ascii=False)
 
 
@@ -29,9 +31,8 @@ def save_history(history):
 
 def detect_anomaly(price):
     """
-    異常値を検知する  
-    （例）
-      - 取得失敗:None
+    異常値を検知する
+      - 取得失敗: None
       - 0円 / 1円など異常に安い
       - 数百万など異常に高い
     """
@@ -48,7 +49,7 @@ def detect_anomaly(price):
 
 
 # -------------------------
-# 通常の比較ロジック
+# 通常の比較ロジック（ログ統合版）
 # -------------------------
 
 def compare_price(product_id, new_price, test_mode=False):
@@ -63,46 +64,48 @@ def compare_price(product_id, new_price, test_mode=False):
         }
     """
 
+    logger.debug(f"Compare start: product_id={product_id}, new_price={new_price}")
+
     # ▼ 異常値チェック
     anomaly = detect_anomaly(new_price)
     if anomaly:
+        logger.warning(f"Anomaly detected: {anomaly}")
         return {"status": "error", "message": anomaly}
 
     history = load_history()
     old_price = history.get(product_id)
 
-    # ▼ テストモードの場合（動作確認用）
+    # ▼ テストモードの場合
     if test_mode:
+        logger.info(f"Test mode: old={old_price}, new={new_price}")
         return {
             "status": "test",
             "message": f"[TEST] old={old_price}, new={new_price}"
         }
 
-    # ▼ 初回データ → 保存して終了
+    # ▼ 初回データ
     if old_price is None:
         history[product_id] = new_price
         save_history(history)
+        logger.info(f"Initial registration: {new_price}円")
         return {"status": "ok", "message": "初回登録しました"}
 
     # ▼ 変動率を計算
     diff_ratio = abs(new_price - old_price) / old_price
+    logger.debug(f"Diff ratio={diff_ratio:.2f} (old={old_price}, new={new_price})")
 
     if diff_ratio >= 0.20:
         history[product_id] = new_price
         save_history(history)
+        logger.info(f"Price changed: {old_price}円 → {new_price}円")
         return {
             "status": "changed",
             "message": f"価格変動！ {old_price}円 → {new_price}円（変動率：{diff_ratio*100:.1f}%）"
         }
 
     # ▼ 変動なし
+    logger.info(f"No change: old={old_price}, new={new_price}")
     return {
         "status": "ok",
         "message": f"変動なし（前回: {old_price}円 / 今回: {new_price}円）"
     }
-
-from src.utils import get_logger
-logger = get_logger()
-
-def compare_prices(old, new):
-    logger.debug(f"Compare start: old={old}, new={new}")

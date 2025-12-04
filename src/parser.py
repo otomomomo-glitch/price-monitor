@@ -9,3 +9,15 @@ def extract_text(page, selector: str) -> str:
 def extract_price(text: str) -> int:
     numbers = re.findall(r"\d+", text)
     return int("".join(numbers)) if numbers else None
+
+def extract_price(text: str) -> int:
+    numbers = re.findall(r"\d+", text)
+    return int(numbers[-1]) if numbers else None
+
+def extract_text(page, selector: str) -> str:
+    try:
+        locator = page.locator(selector)
+        return locator.first.inner_text().strip()
+    except Exception:
+        return None
+

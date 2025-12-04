@@ -25,7 +25,7 @@ def main():
         print(f"▶ {title}（{store_type}）: {url}")
 
         # ストアタイプごとにスクレイプ処理を分岐
-        if store_type == "nintendo":
+        if store_type == "new":
             result = scrape_nintendo(url)
         else:
             print("❌ 未対応の type です\n")

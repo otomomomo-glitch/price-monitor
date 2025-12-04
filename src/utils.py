@@ -63,4 +63,3 @@ def get_logger(name: str = "app"):
     logger.addHandler(console_handler)
 
     return logger
-    json.dump(report, f, indent=2)

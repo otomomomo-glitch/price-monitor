@@ -1,5 +1,3 @@
-# src/screenshot.py
-
 import os
 import re
 import asyncio
@@ -56,15 +54,23 @@ def open_file(path: str):
 def take_screenshot(url: str, title: str) -> str:
     """同期関数として呼び出し可能"""
     try:
-        # すでに asyncio イベントループが走っている場合
-        loop = asyncio.get_running_loop()
-        filepath = loop.run_until_complete(_async_take_screenshot(url, title))
-    except RuntimeError:
-        # 普通はこちら（イベントループがない時）
         filepath = asyncio.run(_async_take_screenshot(url, title))
+    except RuntimeError:
+        # 既存ループがある場合は nest_asyncio で対応済み
+        loop = asyncio.get_event_loop()
+        filepath = loop.run_until_complete(_async_take_screenshot(url, title))
 
-    # スクショを自動で開く
-    open_file(filepath)
+    # CI環境では自動オープンしない
+    if os.getenv("CI") != "true":
+        open_file(filepath)
 
     return filepath
+
+
+
+    # スクショを自動で開く
+    if os.getenv("CI") != "true":
+        open_file(filepath)
+
+        return filepath
 
