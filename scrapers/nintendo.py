@@ -12,17 +12,28 @@ def scrape_nintendo(url: str) -> dict:
         try:
             page.goto(url, timeout=30000)
 
-            # 価格セレクタ（将来変更に備えて複数候補を用意しても良い）
-            price_selector = "div[data-testid='PriceBlock_SalePrice'] span.text-4xl"
+            # 価格セレクタ候補（セール価格と通常価格両方に対応）
+            price_selectors = [
+                "div[data-testid='PriceBlock_SalePrice'] span.text-4xl",
+                "div[data-testid='PriceBlock_BasePrice'] span.text-4xl"
+            ]
 
-            price_text = extract_text(page, price_selector)
+            price_text = None
+            for selector in price_selectors:
+                try:
+                    page.wait_for_selector(selector, timeout=10000)
+                    price_text = extract_text(page, selector)
+                    if price_text:
+                        break
+                except Exception:
+                    continue
 
             if not price_text:
                 logger.warning(f"価格取得失敗: {url}")
                 return {"status": "error", "message": "価格の取得に失敗"}
 
             try:
-                price = int(price_text.replace(",", ""))
+                price = int(price_text.replace(",", "").replace("円", "").strip())
                 logger.info(f"価格取得成功: {price}円 ({url})")
                 return {"status": "ok", "price": price}
             except ValueError:
@@ -31,4 +42,5 @@ def scrape_nintendo(url: str) -> dict:
 
         finally:
             browser.close()
+
 
