@@ -53,11 +53,14 @@ def main():
         # ▼ 結果表示とアクション
         if status == "error":
             print(f"⚠ 異常検知: {message}")
+            notify(f"⚠ 異常検知: {message}", level="error")
             screenshot_path = take_screenshot(url, title)
             print(f"📷 スクショ保存: {screenshot_path}\n")
 
         elif status == "changed":
             print(f"📢 価格変動アラート: {message}\n")
+            notify(f"📢 価格変動アラート: {message}", level="warning")
+
 
         elif status == "ok":
             print(f"✓ {message}\n")
