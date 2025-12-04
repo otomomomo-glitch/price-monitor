@@ -4,3 +4,4 @@ requests
 fastapi
 uvicorn
 pytest
+nest_asyncio

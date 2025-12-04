@@ -3,12 +3,8 @@ import re
 import asyncio
 from datetime import datetime
 from playwright.async_api import async_playwright
-import nest_asyncio
 import subprocess
 import platform
-
-# async イベントループ二重起動対応
-nest_asyncio.apply()
 
 
 def sanitize_filename(name: str) -> str:
