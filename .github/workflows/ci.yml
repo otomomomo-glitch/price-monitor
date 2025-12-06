@@ -1,46 +1,45 @@
-name: Price Monitor CI
+name: Price Monitor
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # 手動実行
   schedule:
-    - cron: "0 */9 * * *"
+    - cron: "0 21 * * *"  # 毎日21時に実行（例）
 
 jobs:
-  check-price:
+  run-monitor:
     runs-on: ubuntu-latest
 
     steps:
-      
+      # 1. ソースコードをチェックアウト
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # 2. Python をセットアップ
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      # 3. 依存関係をインストール
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
+      # 4. Playwright ブラウザをインストール
       - name: Install Playwright browsers
         run: python -m playwright install chromium
 
-      - name: Install Playwright browsers
-        run: |
-          playwright install chromium  
-
+      # 5. スクリプトを実行
       - name: Run price monitor
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          python -m src.main
+        run: python -m src.main
 
-      - name: Debug environment
+      # 6. price_history.json をコミット＆プッシュ
+      - name: Commit updated price history
         run: |
-          pwd
-          ls -R
-          python --version
-          pip list
-
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add configs/price_history.json
+          git commit -m "Update price history [skip ci]" || echo "No changes to commit"
+          git push
 
