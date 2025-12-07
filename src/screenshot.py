@@ -62,11 +62,3 @@ def take_screenshot(url: str, title: str) -> str:
 
     return filepath
 
-
-
-    # スクショを自動で開く
-    if os.getenv("CI") != "true":
-        open_file(filepath)
-
-        return filepath
-
