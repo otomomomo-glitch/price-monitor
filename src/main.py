@@ -7,13 +7,17 @@ from src.comparator import compare_price
 from src.screenshot import take_screenshot
 from src.notifier import notify
 
-# プロジェクトのルートディレクトリを基準にする
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # price-monitor/
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PRODUCTS_PATH = os.path.join(BASE_DIR, "configs", "products.json")
 
+# ストアごとのスクレイパーをマッピング
+SCRAPERS = {
+    "nintendo": scrape_nintendo,
+    "geo": scrape_geo,
+    "rakuten": scrape_rakuten,
+}
 
 def main():
-    # 商品リストを読み込み
     with open(PRODUCTS_PATH, "r", encoding="utf-8") as f:
         products = json.load(f)
 
@@ -22,18 +26,17 @@ def main():
     for product in products:
         title = product["title"]
         url = product["url"]
-        store_type = product["type"]
+        store = product.get("store")  # ← products.json に store を追加
 
-        print(f"▶ {title}（{store_type}）: {url}")
+        print(f"▶ {title}（{store}）: {url}")
 
-        # ストアタイプごとにスクレイプ処理を分岐
-        if store_type == "new":
-            result = scrape_nintendo(url)
-        elif store_type == "used":
-            print("❌ 未対応の type です\n")
+        scraper = SCRAPERS.get(store)
+        if not scraper:
+            print("❌ 未対応の store です\n")
             continue
 
-        # ▼ スクレイプ失敗時
+        result = scraper(url)
+
         if result is None or result.get("price") is None:
             print("❌ 価格取得に失敗しました\n")
             continue
@@ -44,15 +47,10 @@ def main():
         print(f"価格: {price}円")
         print(f"URL: {url}\n")
 
-        # -------------------------
-        #        比較処理
-        # -------------------------
         compare_result = compare_price(url, price)
-
         status = compare_result["status"]
         message = compare_result["message"]
 
-        # ▼ 結果表示とアクション
         if status == "error":
             print(f"⚠ 異常検知: {message}")
             notify(f"⚠ 異常検知: {message}", level="error")
@@ -62,7 +60,6 @@ def main():
         elif status == "changed":
             print(f"📢 価格変動アラート: {message}\n")
             notify(f"📢 価格変動アラート: {message}", level="warning")
-
 
         elif status == "ok":
             print(f"✓ {message}\n")
