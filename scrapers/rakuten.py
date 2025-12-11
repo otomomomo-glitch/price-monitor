@@ -14,6 +14,7 @@ def scrape_rakuten(url: str) -> dict:
 
             # 価格セレクタ候補（商品ページのDOM構造に応じて調整）
             price_selectors = [
+                "number--50WuC primary--31sgd"
                 "span.price",              # よく使われる楽天の価格クラス
                 "span.goods_detail_price_" # ページによってはこちら
             ]
