@@ -14,7 +14,7 @@ def scrape_geo(url: str) -> dict:
 
             # 価格セレクタ候補（中古価格に対応）
             price_selectors = [
-                "span.goods_detail_price_ b",  # 中古価格
+                "span.goods_detail_price_",  # 中古価格
                 "span.goods_detail_price_small_"  # 他の価格帯があれば追加
             ]
 
