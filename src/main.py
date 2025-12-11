@@ -1,9 +1,11 @@
 import json
 import os
 from scrapers.nintendo import scrape_nintendo
-from .comparator import compare_price
-from .screenshot import take_screenshot
-from .notifier import notify
+from scrapers.geo import scrape_geo
+from scrapers.rakuten import scrape_rakuten
+from src.comparator import compare_price
+from src.screenshot import take_screenshot
+from src.notifier import notify
 
 # プロジェクトのルートディレクトリを基準にする
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))  # price-monitor/
