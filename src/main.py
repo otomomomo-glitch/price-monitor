@@ -29,7 +29,7 @@ def main():
         # ストアタイプごとにスクレイプ処理を分岐
         if store_type == "new":
             result = scrape_nintendo(url)
-        else:
+        elif store_type == "used":
             print("❌ 未対応の type です\n")
             continue
 
