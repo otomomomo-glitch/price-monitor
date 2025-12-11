@@ -11,12 +11,11 @@ def scrape_rakuten(url: str) -> dict:
         page = browser.new_page()
         try:
             page.goto(url, timeout=30000)
+            page.wait_for_load_state("networkidle")
 
-            # 価格セレクタ候補（商品ページのDOM構造に応じて調整）
             price_selectors = [
-                "number--50WuC primary--31sgd"
-                "span.price",              # よく使われる楽天の価格クラス
-                "span.goods_detail_price_" # ページによってはこちら
+                "span.price",               # よく使われる楽天の価格クラス
+                "span.goods_detail_price_"  # ページによってはこちら
             ]
 
             price_text = None
@@ -31,6 +30,7 @@ def scrape_rakuten(url: str) -> dict:
 
             if not price_text:
                 logger.warning(f"価格取得失敗: {url}")
+                logger.debug(f"Page content dump:\n{page.content()[:1000]}")
                 return {"status": "error", "message": "価格の取得に失敗"}
 
             try:
@@ -39,6 +39,7 @@ def scrape_rakuten(url: str) -> dict:
                 return {"status": "ok", "price": price}
             except ValueError:
                 logger.error(f"価格解析エラー: {price_text} ({url})")
+                logger.debug(f"Page content dump:\n{page.content()[:1000]}")
                 return {"status": "error", "message": f"価格解析エラー: {price_text}"}
 
         finally:

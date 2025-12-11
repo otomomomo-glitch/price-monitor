@@ -11,11 +11,12 @@ def scrape_geo(url: str) -> dict:
         page = browser.new_page()
         try:
             page.goto(url, timeout=30000)
+            # ページロードを待つ（ネットワークが落ち着くまで）
+            page.wait_for_load_state("networkidle")
 
-            # 価格セレクタ候補（中古価格に対応）
             price_selectors = [
-                "span.goods_detail_price_",  # 中古価格
-                "span.goods_detail_price_small_"  # 他の価格帯があれば追加
+                "span.goods_detail_price_ b",
+                "span.goods_detail_price_small_"
             ]
 
             price_text = None
@@ -30,6 +31,8 @@ def scrape_geo(url: str) -> dict:
 
             if not price_text:
                 logger.warning(f"価格取得失敗: {url}")
+                # 失敗時にHTMLをログ出力
+                logger.debug(f"Page content dump:\n{page.content()[:1000]}")  
                 return {"status": "error", "message": "価格の取得に失敗"}
 
             try:
@@ -38,6 +41,7 @@ def scrape_geo(url: str) -> dict:
                 return {"status": "ok", "price": price}
             except ValueError:
                 logger.error(f"価格解析エラー: {price_text} ({url})")
+                logger.debug(f"Page content dump:\n{page.content()[:1000]}")
                 return {"status": "error", "message": f"価格解析エラー: {price_text}"}
 
         finally:
