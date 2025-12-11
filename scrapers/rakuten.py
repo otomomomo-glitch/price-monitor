@@ -8,14 +8,20 @@ def scrape_rakuten(url: str) -> dict:
     """楽天市場の価格情報を取得"""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/120.0.0.0 Safari/537.36",
+            locale="ja-JP"
+        )
+        page = context.new_page()
         try:
             page.goto(url, timeout=30000)
             page.wait_for_load_state("networkidle")
 
             price_selectors = [
-                "span.price",               # よく使われる楽天の価格クラス
-                "span.goods_detail_price_"  # ページによってはこちら
+                "span.price",
+                "span.goods_detail_price_"
             ]
 
             price_text = None
