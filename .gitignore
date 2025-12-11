@@ -1,6 +1,7 @@
 # OSごとの不要ファイル
 .DS_Store
 Thumbs.db
+logs/app.log
 
 # Pythonキャッシュ
 __pycache__/
@@ -24,3 +25,5 @@ venv/
 .idea/
 
 # GitHub Actionsなどで生成される一時ファイルがあれば追加
+
+
