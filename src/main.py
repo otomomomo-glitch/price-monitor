@@ -1,7 +1,6 @@
 import json
 import os
 from scrapers.nintendo import scrape_nintendo
-from scrapers.geo import scrape_geo
 from scrapers.rakuten import scrape_rakuten
 from src.comparator import compare_price
 from src.screenshot import take_screenshot
@@ -10,10 +9,8 @@ from src.notifier import notify
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PRODUCTS_PATH = os.path.join(BASE_DIR, "configs", "products.json")
 
-# ストアごとのスクレイパーをマッピング
 SCRAPERS = {
     "nintendo": scrape_nintendo,
-    "geo": scrape_geo,
     "rakuten": scrape_rakuten,
 }
 
@@ -26,7 +23,7 @@ def main():
     for product in products:
         title = product["title"]
         url = product["url"]
-        store = product.get("store")  # ← products.json に store を追加
+        store = product.get("store")
 
         print(f"▶ {title}（{store}）: {url}")
 
@@ -73,4 +70,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

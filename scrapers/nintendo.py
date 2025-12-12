@@ -5,17 +5,29 @@ from src.utils import get_logger
 logger = get_logger()
 
 def scrape_nintendo(url: str) -> dict:
-    """Nintendo Store の価格情報を取得"""
+    """任天堂ストアの価格情報を取得"""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/120.0.0.0 Safari/537.36",
+            locale="ja-JP",
+            extra_http_headers={
+                "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+                "Referer": "https://www.google.com/",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }
+        )
+        page = context.new_page()
         try:
             page.goto(url, timeout=30000)
+            page.wait_for_load_state("networkidle")
 
-            # 価格セレクタ候補（セール価格と通常価格両方に対応）
+            # Nintendoストアの価格セレクタ（例: span.price）
             price_selectors = [
-                "div[data-testid='PriceBlock_SalePrice'] span.text-4xl",
-                "div[data-testid='PriceBlock_BasePrice'] span.text-4xl"
+                "span.price",
+                "div.price"  # ページ構造によってはこちら
             ]
 
             price_text = None
@@ -30,6 +42,7 @@ def scrape_nintendo(url: str) -> dict:
 
             if not price_text:
                 logger.warning(f"価格取得失敗: {url}")
+                logger.debug(f"Page content dump:\n{page.content()[:1000]}")
                 return {"status": "error", "message": "価格の取得に失敗"}
 
             try:
@@ -38,6 +51,7 @@ def scrape_nintendo(url: str) -> dict:
                 return {"status": "ok", "price": price}
             except ValueError:
                 logger.error(f"価格解析エラー: {price_text} ({url})")
+                logger.debug(f"Page content dump:\n{page.content()[:1000]}")
                 return {"status": "error", "message": f"価格解析エラー: {price_text}"}
 
         finally:
