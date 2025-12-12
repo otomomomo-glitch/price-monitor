@@ -21,26 +21,14 @@ def scrape_nintendo(url: str) -> dict:
         )
         page = context.new_page()
         try:
-            page.goto(url, timeout=30000)
-            page.wait_for_load_state("networkidle")
+            # DOM構築完了まで待つ
+            page.goto(url, timeout=30000, wait_until="domcontentloaded")
 
-            # Nintendoストアの価格セレクタ（例: span.price）
-            price_selectors = [
-                "span.price",
-                "div.price"  # ページ構造によってはこちら
-            ]
-
-            price_text = None
-            for selector in price_selectors:
-                try:
-                    page.wait_for_selector(selector, timeout=10000)
-                    price_text = extract_text(page, selector)
-                    if price_text:
-                        break
-                except Exception:
-                    continue
-
-            if not price_text:
+            # 価格要素を直接待つ
+            try:
+                page.wait_for_selector("span.price", timeout=10000)
+                price_text = extract_text(page, "span.price")
+            except Exception:
                 logger.warning(f"価格取得失敗: {url}")
                 logger.debug(f"Page content dump:\n{page.content()[:1000]}")
                 return {"status": "error", "message": "価格の取得に失敗"}
