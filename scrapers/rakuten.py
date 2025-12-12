@@ -12,7 +12,12 @@ def scrape_rakuten(url: str) -> dict:
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                        "AppleWebKit/537.36 (KHTML, like Gecko) "
                        "Chrome/120.0.0.0 Safari/537.36",
-            locale="ja-JP"
+            locale="ja-JP",
+            extra_http_headers={
+                "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+                "Referer": "https://www.google.com/",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }
         )
         page = context.new_page()
         try:
