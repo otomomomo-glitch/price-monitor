@@ -1,57 +1,42 @@
-from playwright.sync_api import sync_playwright
-from src.parser import extract_text
+import requests
 from src.utils import get_logger
 
 logger = get_logger()
 
-def scrape_rakuten(url: str) -> dict:
-    """楽天市場の価格情報を取得"""
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                       "AppleWebKit/537.36 (KHTML, like Gecko) "
-                       "Chrome/120.0.0.0 Safari/537.36",
-            locale="ja-JP",
-            extra_http_headers={
-                "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
-                "Referer": "https://www.google.com/",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-            }
-        )
-        page = context.new_page()
-        try:
-            page.goto(url, timeout=30000)
-            page.wait_for_load_state("networkidle")
+RAKUTEN_API_URL = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706"
+APPLICATION_ID = "1046951952480833102"  # ←取得したアプリケーションIDをここに設定
 
-            price_selectors = [
-                "span.price",
-                "span.goods_detail_price_"
-            ]
+def scrape_rakuten_api(keyword: str, hits: int = 1) -> dict:
+    """
+    楽天市場APIを叩いて商品価格を取得する関数
+    :param keyword: 商品名や検索キーワード
+    :param hits: 取得件数（デフォルト1件）
+    :return: {"status": "ok", "title": 商品名, "price": 価格, "url": 商品URL}
+    """
+    params = {
+        "applicationId": APPLICATION_ID,
+        "keyword": keyword,
+        "hits": hits,
+        "format": "json"
+    }
 
-            price_text = None
-            for selector in price_selectors:
-                try:
-                    page.wait_for_selector(selector, timeout=10000)
-                    price_text = extract_text(page, selector)
-                    if price_text:
-                        break
-                except Exception:
-                    continue
+    try:
+        response = requests.get(RAKUTEN_API_URL, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
 
-            if not price_text:
-                logger.warning(f"価格取得失敗: {url}")
-                logger.debug(f"Page content dump:\n{page.content()[:1000]}")
-                return {"status": "error", "message": "価格の取得に失敗"}
+        if "Items" not in data or len(data["Items"]) == 0:
+            logger.warning(f"商品が見つかりませんでした: {keyword}")
+            return {"status": "error", "message": "商品が見つかりませんでした"}
 
-            try:
-                price = int(price_text.replace(",", "").replace("円", "").strip())
-                logger.info(f"価格取得成功: {price}円 ({url})")
-                return {"status": "ok", "price": price}
-            except ValueError:
-                logger.error(f"価格解析エラー: {price_text} ({url})")
-                logger.debug(f"Page content dump:\n{page.content()[:1000]}")
-                return {"status": "error", "message": f"価格解析エラー: {price_text}"}
+        item = data["Items"][0]["Item"]
+        title = item["itemName"]
+        price = item["itemPrice"]
+        url = item["itemUrl"]
 
-        finally:
-            browser.close()
+        logger.info(f"価格取得成功: {price}円 ({title})")
+        return {"status": "ok", "title": title, "price": price, "url": url}
+
+    except Exception as e:
+        logger.error(f"楽天APIエラー: {e}")
+        return {"status": "error", "message": str(e)}

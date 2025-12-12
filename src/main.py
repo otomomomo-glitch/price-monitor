@@ -1,7 +1,6 @@
 import json
 import os
-from scrapers.nintendo import scrape_nintendo
-from scrapers.rakuten import scrape_rakuten
+from scrapers.rakuten import scrape_rakuten_api
 from src.comparator import compare_price
 from src.screenshot import take_screenshot
 from src.notifier import notify
@@ -9,38 +8,28 @@ from src.notifier import notify
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PRODUCTS_PATH = os.path.join(BASE_DIR, "configs", "products.json")
 
-SCRAPERS = {
-    "nintendo": scrape_nintendo,
-    "rakuten": scrape_rakuten,
-}
-
 def main():
     with open(PRODUCTS_PATH, "r", encoding="utf-8") as f:
         products = json.load(f)
 
-    print("--- 商品スクレイプ開始 ---\n")
+    print("--- 楽天市場価格取得開始 ---\n")
 
     for product in products:
         title = product["title"]
-        url = product["url"]
-        store = product.get("store")
+        keyword = title  # API検索用に商品名を使う
 
-        print(f"▶ {title}（{store}）: {url}")
+        print(f"▶ {title}: {keyword}")
 
-        scraper = SCRAPERS.get(store)
-        if not scraper:
-            print("❌ 未対応の store です\n")
-            continue
-
-        result = scraper(url)
+        result = scrape_rakuten_api(keyword)
 
         if result is None or result.get("price") is None:
             print("❌ 価格取得に失敗しました\n")
             continue
 
         price = result["price"]
+        url = result["url"]
 
-        print(f"タイトル: {title}")
+        print(f"タイトル: {result['title']}")
         print(f"価格: {price}円")
         print(f"URL: {url}\n")
 
