@@ -2,6 +2,9 @@ import json
 import os
 from scrapers.rakuten import scrape_rakuten_api
 from src.notifier import notify
+from src.utils import get_logger
+
+logger = get_logger()
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PRODUCTS_PATH = os.path.join(BASE_DIR, "configs", "products.json")
@@ -42,6 +45,13 @@ def main():
 
         # Slackなどに通知
         notify(message, level="info")
+  
+    logger.info("楽天APIの呼び出し開始")
+try:
+    # API呼び出し処理
+    pass
+except Exception as e:
+    logger.error(f"エラー発生: {e}")      
 
 if __name__ == "__main__":
     main()

@@ -1,65 +1,21 @@
 import logging
-import os
-from logging.handlers import RotatingFileHandler
+import sys
 
-# ログディレクトリが存在しない場合は作成
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
-os.makedirs(LOG_DIR, exist_ok=True)
-
-LOG_FILE = os.path.join(LOG_DIR, "app.log")
-
-
-class ColorFormatter(logging.Formatter):
+def get_logger(name: str = "price-monitor") -> logging.Logger:
     """
-    ターミナル出力時に色付きログをサポート
+    プロジェクト全体で共通して使えるロガーを返す。
+    ログレベルやフォーマットはここで統一する。
     """
-    COLORS = {
-        "DEBUG": "\033[94m",   # 青
-        "INFO": "\033[92m",    # 緑
-        "WARNING": "\033[93m", # 黄
-        "ERROR": "\033[91m",   # 赤
-        "CRITICAL": "\033[95m" # マゼンタ
-    }
-    RESET = "\033[0m"
-
-    def format(self, record):
-        log_fmt = f"{self.COLORS.get(record.levelname, '')}[%(levelname)s]%(message)s{self.RESET}"
-        formatter = logging.Formatter(log_fmt)
-        return formatter.format(record)
-
-
-def get_logger(name: str = "app"):
-    """
-    共通 logger を生成して返す。
-    import したどこからでも同じ logger を取得できる。
-    """
-
     logger = logging.getLogger(name)
 
-    if logger.handlers:
-        # すでに設定済みならそのまま返す
-        return logger
-
-    logger.setLevel(logging.DEBUG)
-
-    # --- ファイルログ（ローテーションあり） ---
-    file_handler = RotatingFileHandler(
-        LOG_FILE,
-        maxBytes=10 * 1024 * 1024,  # 10MB
-        backupCount=5
-    )
-    file_format = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        "%Y-%m-%d %H:%M:%S"
-    )
-    file_handler.setFormatter(file_format)
-
-    # --- コンソールログ（色付き） ---
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(ColorFormatter())
-
-    # logger に追加
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
+    if not logger.handlers:  # 二重追加防止
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(
+            "[%(levelname)s] %(asctime)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
 
     return logger
