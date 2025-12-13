@@ -27,6 +27,8 @@ jobs:
       # 4. テスト実行 (pytest)
       - name: Run tests
         run: pytest --maxfail=1 --disable-warnings -q
+        env:
+          PYTHONPATH: ${{ github.workspace }}
 
       # 5. スクリプトを実行
       - name: Run price monitor
