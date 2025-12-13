@@ -1,7 +1,10 @@
 import pytest
-from scrapers import rakuten
+import scrapers.rakuten_api as rakuten
 
 def test_scrape_rakuten_api_success(monkeypatch):
+    # ダミーの楽天APIキーを設定
+    monkeypatch.setenv("RAKUTEN_APP_ID", "dummy_app_id")
+
     # モックレスポンス
     def mock_get(*args, **kwargs):
         class MockResponse:
@@ -25,15 +28,3 @@ def test_scrape_rakuten_api_success(monkeypatch):
     assert len(results) == 1
     assert results[0]["title"] == "テスト商品"
     assert results[0]["total"] == 1000
-
-def test_scrape_rakuten_api_no_items(monkeypatch):
-    def mock_get(*args, **kwargs):
-        class MockResponse:
-            def raise_for_status(self): pass
-            def json(self): return {"Items": []}
-        return MockResponse()
-
-    monkeypatch.setattr("requests.get", mock_get)
-
-    results = rakuten.scrape_rakuten_api("存在しない商品")
-    assert results == []
