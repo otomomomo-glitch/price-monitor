@@ -1,5 +1,5 @@
 import pytest
-import scrapers.rakuten_api as rakuten
+import scrapers.rakuten as rakuten
 
 def test_scrape_rakuten_api_success(monkeypatch):
     # ダミーの楽天APIキーを設定
