@@ -11,14 +11,13 @@ def test_notify_called(monkeypatch):
             status_code = 200
         return MockResponse()
 
-    # Slack Webhook URL をテスト用に設定
     monkeypatch.setenv("SLACK_WEBHOOK_URL", "http://dummy-webhook")
-
-    # requests.post をモック化
     monkeypatch.setattr("requests.post", mock_post)
 
     notifier.notify("テストメッセージ", level="info")
 
     assert "url" in called
     assert "json" in called
-    assert called["json"]["text"].startswith("テストメッセージ")
+    # メッセージが「ℹ️ 情報」で始まり、本文に「テストメッセージ」が含まれることを確認
+    assert called["json"]["text"].startswith("ℹ️ 情報")
+    assert "テストメッセージ" in called["json"]["text"]
