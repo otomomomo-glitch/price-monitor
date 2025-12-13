@@ -5,3 +5,4 @@ fastapi
 uvicorn
 pytest
 nest_asyncio
+python-dotenv
