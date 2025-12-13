@@ -3,7 +3,7 @@ name: Price Monitor
 on:
   workflow_dispatch:   # 手動実行
   schedule:
-    - cron: "0 21 * * *"  # 毎日21時に実行（例）
+    - cron: "0 21 * * *"  # 毎日21時に実行
 
 jobs:
   run-monitor:
@@ -24,11 +24,15 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # 4. スクリプトを実行
+      # 4. テスト実行 (pytest)
+      - name: Run tests
+        run: pytest --maxfail=1 --disable-warnings -q
+
+      # 5. スクリプトを実行
       - name: Run price monitor
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}   # ←ここに追加！
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
         run: python -m src.main
 
 
