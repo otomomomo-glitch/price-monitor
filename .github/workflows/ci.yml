@@ -44,4 +44,6 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+
 

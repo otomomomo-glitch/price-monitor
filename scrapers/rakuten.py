@@ -1,18 +1,20 @@
+import os
 import requests
 from src.utils import get_logger
+from dotenv import load_dotenv
 
 logger = get_logger()
 
+load_dotenv()  # ローカル開発時に .env を読み込む
+
 RAKUTEN_API_URL = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706"
-APPLICATION_ID = "1046951952480833102"
+APPLICATION_ID = os.getenv("RAKUTEN_APP_ID")
 
 def scrape_rakuten_api(keyword: str, hits: int = 5) -> list:
-    """
-    楽天市場APIを叩いて複数候補の商品価格を取得
-    :param keyword: 商品名や検索キーワード
-    :param hits: 取得件数（デフォルト5件）
-    :return: [{"title": 商品名, "price": 価格, "shipping": 送料情報, "total": 合計, "url": 商品URL}, ...]
-    """
+    if not APPLICATION_ID:
+        logger.error("楽天APIのアプリケーションIDが設定されていません")
+        return []
+
     params = {
         "applicationId": APPLICATION_ID,
         "keyword": keyword,
