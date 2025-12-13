@@ -2,6 +2,7 @@
 .DS_Store
 Thumbs.db
 logs/app.log
+.env
 
 # Pythonキャッシュ
 __pycache__/
