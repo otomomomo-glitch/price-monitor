@@ -4,7 +4,7 @@ from src.utils import get_logger
 logger = get_logger()
 
 RAKUTEN_API_URL = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706"
-APPLICATION_ID = "1046951952480833102"  # ←取得したアプリケーションIDを設定
+APPLICATION_ID = "1046951952480833102"
 
 def scrape_rakuten_api(keyword: str, hits: int = 5) -> list:
     """
@@ -36,16 +36,14 @@ def scrape_rakuten_api(keyword: str, hits: int = 5) -> list:
             price = item["itemPrice"]
             url = item["itemUrl"]
 
-            # 送料フラグ: 0=送料無料, 1=送料別
             postage_flag = item.get("postageFlag", 0)
             if postage_flag == 0:
                 shipping = None
                 total = price
             else:
-                # 送料別 → 合計は「価格＋送料」だが、送料額はAPIでは詳細が取れないことが多い
-                # ここでは「送料別」と明示し、totalはpriceのままにする
                 shipping = "送料別"
-                total = price
+                # 送料額はAPIで取れないので、同価格なら送料無料を優先するために +1 する
+                total = price + 1  
 
             results.append({
                 "title": title,

@@ -7,8 +7,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PRODUCTS_PATH = os.path.join(BASE_DIR, "configs", "products.json")
 
 def main():
-    with open(PRODUCTS_PATH, "r", encoding="utf-8") as f:
-        products = json.load(f)
+    products = [
+        {"title": "タイオン ダウンマフラー"},
+        {"title": "エビオス錠 2000錠"}
+    ]
 
     print("--- 楽天市場価格取得開始 ---\n")
 
@@ -24,7 +26,7 @@ def main():
             print("❌ 商品が見つかりませんでした\n")
             continue
 
-        # 安い順に並べ替え
+        # 安い順に並べ替え（totalを基準）
         sorted_results = sorted(results, key=lambda x: x["total"])
 
         message_lines = [f"【{title}】の価格一覧（安い順）"]
@@ -34,7 +36,7 @@ def main():
             message_lines.append(line)
 
         message = "\n".join(message_lines)
-
+        print(message + "\n")
         # コンソール出力
         print(message + "\n")
 
