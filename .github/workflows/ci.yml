@@ -24,18 +24,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # 4. Playwright ブラウザをインストール
-      - name: Install Playwright browsers
-        run: python -m playwright install chromium
-
-      # 5. スクリプトを実行
+      # 4. スクリプトを実行
       - name: Run price monitor
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}   # ←ここに追加！
         run: python -m src.main
 
-      # 6. price_history.json をコミット＆プッシュ
+      # 5. price_history.json をコミット＆プッシュ
       - name: Commit updated price history
         run: |
           git config --global user.name "github-actions"
