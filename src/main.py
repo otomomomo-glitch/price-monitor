@@ -1,8 +1,6 @@
 import json
 import os
 from scrapers.rakuten import scrape_rakuten_api
-from src.comparator import compare_price
-from src.screenshot import take_screenshot
 from src.notifier import notify
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -16,46 +14,32 @@ def main():
 
     for product in products:
         title = product["title"]
-        keyword = title  # API検索用に商品名を使う
+        keyword = title
 
         print(f"▶ {title}: {keyword}")
 
-        result = scrape_rakuten_api(keyword)
+        results = scrape_rakuten_api(keyword, hits=5)
 
-        if result is None or result.get("price") is None:
-            print("❌ 価格取得に失敗しました\n")
+        if not results:
+            print("❌ 商品が見つかりませんでした\n")
             continue
 
-        price = result["price"]
-        url = result["url"]
+        # 安い順に並べ替え
+        sorted_results = sorted(results, key=lambda x: x["total"])
 
-        print(f"タイトル: {result['title']}")
-        print(f"価格: {price}円")
-        print(f"URL: {url}\n")
+        message_lines = [f"【{title}】の価格一覧（安い順）"]
+        for item in sorted_results:
+            shipping_info = f" + {item['shipping']}" if item['shipping'] else ""
+            line = f"- {item['price']}円{shipping_info} | {item['url']}"
+            message_lines.append(line)
 
-        compare_result = compare_price(url, price)
-        status = compare_result["status"]
-        message = compare_result["message"]
+        message = "\n".join(message_lines)
 
-        if status == "error":
-            print(f"⚠ 異常検知: {message}")
-            notify(f"⚠ 異常検知: {message}", level="error")
-            screenshot_path = take_screenshot(url, title)
-            print(f"📷 スクショ保存: {screenshot_path}\n")
+        # コンソール出力
+        print(message + "\n")
 
-        elif status == "changed":
-            print(f"📢 価格変動アラート: {message}\n")
-            notify(f"📢 価格変動アラート: {message}", level="warning")
-
-        elif status == "ok":
-            print(f"✓ {message}\n")
-
-        elif status == "test":
-            print(f"[TEST] {message}\n")
-
-        else:
-            print(f"その他の状態: {message}\n")
-
+        # Slackなどに通知
+        notify(message, level="info")
 
 if __name__ == "__main__":
     main()

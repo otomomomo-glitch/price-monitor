@@ -4,14 +4,14 @@ from src.utils import get_logger
 logger = get_logger()
 
 RAKUTEN_API_URL = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706"
-APPLICATION_ID = "1046951952480833102"  # ←取得したアプリケーションIDをここに設定
+APPLICATION_ID = "YOUR_APPLICATION_ID"  # ←取得したアプリケーションIDを設定
 
-def scrape_rakuten_api(keyword: str, hits: int = 1) -> dict:
+def scrape_rakuten_api(keyword: str, hits: int = 5) -> list:
     """
-    楽天市場APIを叩いて商品価格を取得する関数
+    楽天市場APIを叩いて複数候補の商品価格を取得
     :param keyword: 商品名や検索キーワード
-    :param hits: 取得件数（デフォルト1件）
-    :return: {"status": "ok", "title": 商品名, "price": 価格, "url": 商品URL}
+    :param hits: 取得件数（デフォルト5件）
+    :return: [{"title": 商品名, "price": 価格, "shipping": 送料情報, "total": 合計, "url": 商品URL}, ...]
     """
     params = {
         "applicationId": APPLICATION_ID,
@@ -27,16 +27,36 @@ def scrape_rakuten_api(keyword: str, hits: int = 1) -> dict:
 
         if "Items" not in data or len(data["Items"]) == 0:
             logger.warning(f"商品が見つかりませんでした: {keyword}")
-            return {"status": "error", "message": "商品が見つかりませんでした"}
+            return []
 
-        item = data["Items"][0]["Item"]
-        title = item["itemName"]
-        price = item["itemPrice"]
-        url = item["itemUrl"]
+        results = []
+        for entry in data["Items"]:
+            item = entry["Item"]
+            title = item["itemName"]
+            price = item["itemPrice"]
+            url = item["itemUrl"]
 
-        logger.info(f"価格取得成功: {price}円 ({title})")
-        return {"status": "ok", "title": title, "price": price, "url": url}
+            # 送料フラグ: 0=送料無料, 1=送料別
+            postage_flag = item.get("postageFlag", 0)
+            if postage_flag == 0:
+                shipping = None
+                total = price
+            else:
+                # 送料別 → 合計は「価格＋送料」だが、送料額はAPIでは詳細が取れないことが多い
+                # ここでは「送料別」と明示し、totalはpriceのままにする
+                shipping = "送料別"
+                total = price
+
+            results.append({
+                "title": title,
+                "price": price,
+                "shipping": shipping,
+                "total": total,
+                "url": url
+            })
+
+        return results
 
     except Exception as e:
         logger.error(f"楽天APIエラー: {e}")
-        return {"status": "error", "message": str(e)}
+        return []
