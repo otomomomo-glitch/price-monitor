@@ -32,6 +32,7 @@ jobs:
       - name: Run price monitor
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}   # ←ここに追加！
         run: python -m src.main
 
       # 6. price_history.json をコミット＆プッシュ
@@ -44,6 +45,5 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
 
 
